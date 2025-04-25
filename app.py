@@ -47,7 +47,7 @@ st.markdown("""
     <img src="data:image/jpeg;base64,{}" width="100">
     <div>
         <h1 style="margin: 0; color: white;">Earthquake Risk Analysis</h1>
-        <p style="margin: 0; color: #CCC;">This application visualizes earthquake data across North America</p>
+        <p style="margin: 0; color: #CCC;">This application visualizes earthquake data.</p>
     </div>
 </div>
 """.format(get_base64_encoded_image("logo.png")), unsafe_allow_html=True)
@@ -94,7 +94,7 @@ def load_default_data():
         if os.path.exists(dataset_path):
             df = pd.read_csv(dataset_path)
             if not df.empty:
-                st.success(f"Successfully loaded dataset with {len(df)} records")
+                #st.success(f"Successfully loaded dataset with {len(df)} records")
                 return df
             else:
                 st.error(f"The dataset at {dataset_path} is empty")
@@ -180,7 +180,7 @@ tab1, tab2, tab3, tab4 = st.tabs(["Heatmap", "Zipcode Risk Checker", "Magnitude 
 
 # Tab 1: Heatmap
 with tab1:
-    st.header("Earthquake Heatmap - North America")
+    st.header("Earthquake Heatmap")
     
     # Filter controls
     col1, col2 = st.columns(2)
@@ -230,7 +230,7 @@ with tab1:
                                radius=10,
                                center=dict(lat=39.8, lon=-98.5), 
                                zoom=3,
-                               mapbox_style="carto-positron",
+                               mapbox_style="open-street-map",
                                title="Earthquake Intensity Map",
                                color_continuous_scale="Viridis")
         
@@ -463,7 +463,7 @@ with tab2:
                         hover_data=['MAGNITUDE', 'DISTANCE_KM', 'DATE'] if 'MAGNITUDE' in combined_data else None,
                         zoom=8,
                         height=500,
-                        mapbox_style="carto-positron"
+                        mapbox_style="open-street-map"
                     )
                     
                     st.plotly_chart(fig, use_container_width=True)
@@ -914,7 +914,7 @@ with tab3:
                         zoom=8,
                         height=400,
                         width=700,
-                        mapbox_style="carto-positron"
+                        mapbox_style="open-street-map"
                     )
                     
                     st.plotly_chart(fig)
@@ -1027,7 +1027,7 @@ with tab3:
                 zoom=8,
                 height=400,
                 width=700,
-                mapbox_style="carto-positron"
+                mapbox_style="open-street-map"
             )
             
             st.plotly_chart(fig)
