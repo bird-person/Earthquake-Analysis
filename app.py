@@ -32,7 +32,7 @@ def get_base64_encoded_image(image_path):
     with open(image_path, "rb") as img_file:
         return base64.b64encode(img_file.read()).decode('utf-8')
 
-# Add app title and logo at the top in a more compact layout
+# Title and logo at the top 
 st.markdown("""
 <div style="display: flex; align-items: center; gap: 20px; padding: 10px; background-color: #1E1E2E; border-radius: 5px; margin-bottom: 20px;">
     <img src="data:image/jpeg;base64,{}" width="100">
