@@ -87,92 +87,38 @@ def validate_dataset(df):
 # Load data based on user choice
 @st.cache_data
 def load_default_data():
-    # First check if we have a path configured in secrets
-    try:
-        dataset_path = st.secrets["data"]["dataset_path"]
-        if os.path.exists(dataset_path):
-            st.info(f"Using dataset path from configuration: {dataset_path}")
+    # Use a simpler approach to find the dataset
+    dataset_path = "src/earthquake_cleandata_posteda.csv"
+    
+    if os.path.exists(dataset_path):
+        try:
             df = pd.read_csv(dataset_path)
             return df
-    except Exception as e:
-        # If we can't access secrets or the path doesn't exist, proceed to try other options
-        st.info(f"Could not use configured dataset path, trying alternative paths...")
+        except Exception as e:
+            # Silent error handling
+            pass
     
-    # Try multiple possible paths for the data file
-    possible_paths = [
-        # Path relative to script
+    # Try a few alternative paths if the main path doesn't work
+    alternative_paths = [
         os.path.join(os.path.dirname(os.path.abspath(__file__)), "src", "earthquake_cleandata_posteda.csv"),
-        # Path relative to current working directory
-        os.path.join(os.getcwd(), "src", "earthquake_cleandata_posteda.csv"),
-        # Path directly in src folder (for deployed environments)
-        os.path.join("src", "earthquake_cleandata_posteda.csv"),
-        # Path directly in current directory (fallback)
-        "earthquake_cleandata_posteda.csv",
-        # Additional paths for Streamlit Cloud deployment
-        "/mount/src/earthquake-analysis/src/earthquake_cleandata_posteda.csv",
-        "/app/src/earthquake_cleandata_posteda.csv",
-        # Try one directory up
-        os.path.join("..", "src", "earthquake_cleandata_posteda.csv"),
-        # Common Streamlit Cloud paths
         "/mount/src/karthikmanjunath_hariharannadanasabapathi_naveenmanikandan_phase_2/src/earthquake_cleandata_posteda.csv",
-        os.path.join(os.getcwd(), "..", "src", "earthquake_cleandata_posteda.csv")
+        "/mount/src/earthquake-analysis/src/earthquake_cleandata_posteda.csv"
     ]
     
-    # Add path from environment variable if it exists
-    env_path = os.environ.get('EARTHQUAKE_DATA_PATH')
-    if env_path:
-        possible_paths.insert(0, env_path)
-    
-    # Try each path
-    for file_path in possible_paths:
-        if os.path.exists(file_path):
-            st.info(f"Data file found at: {file_path}")
+    for path in alternative_paths:
+        if os.path.exists(path):
             try:
-                df = pd.read_csv(file_path)
+                df = pd.read_csv(path)
                 return df
-            except Exception as e:
-                st.error(f"Error reading file at {file_path}: {str(e)}")
+            except:
                 continue
     
-    # If no file is found, try to use the upload widget
-    st.error("Could not find the dataset file in any of the expected locations.")
-    
-    # Try to use a minimal embedded dataset as a last resort
-    st.info("Using an embedded sample dataset instead. For full functionality, please upload your own data.")
-    
-    # Check if we're allowed to use fallback data from secrets
-    try:
-        allow_fallback = st.secrets["general"]["allow_fallback_data"]
-        if not allow_fallback:
-            st.error("Fallback data is disabled in configuration. Please provide the dataset file.")
-            return pd.DataFrame()  # Return empty dataframe
-    except:
-        # If we can't access secrets, assume fallback is allowed
-        pass
-        
-    # Create a minimal dataset with realistic earthquake data
-    sample_data = {
-        'LATITUDE': [34.05, 37.77, 40.71, 32.72, 36.12, 38.58, 39.73, 42.36, 33.93, 35.65],
-        'LONGITUDE': [-118.25, -122.42, -74.01, -117.16, -115.17, -121.49, -104.99, -71.06, -118.39, -120.70],
-        'MAGNITUDE': [3.5, 4.2, 2.8, 3.9, 5.1, 2.5, 3.3, 2.9, 4.7, 3.6],
-        'DATE': pd.to_datetime([
-            '2023-01-01', '2023-01-15', '2023-02-01', '2023-02-15', '2023-03-01',
-            '2023-03-15', '2023-04-01', '2023-04-15', '2023-05-01', '2023-05-15'
-        ]),
-        'DEPTH': [5.0, 7.5, 3.2, 10.1, 8.7, 4.5, 6.8, 5.2, 9.3, 7.1],
-        'PLACE': [
-            'Los Angeles, CA', 'San Francisco, CA', 'New York, NY', 'San Diego, CA', 
-            'Las Vegas, NV', 'Sacramento, CA', 'Denver, CO', 'Boston, MA',
-            'Santa Monica, CA', 'Fresno, CA'
-        ]
-    }
-    
-    return pd.DataFrame(sample_data)
+    # If we still can't find it, return an empty DataFrame
+    return pd.DataFrame()
 
 if dataset_option == "Use default North America dataset":
     df = load_default_data()
-    if not df.empty:
-        st.success("Using default USGS earthquake dataset")
+    # Remove the success message to clean up the UI
 else:
     uploaded_file = st.file_uploader("Upload CSV file containing earthquake data", type=['csv'])
     
@@ -210,8 +156,7 @@ else:
     else:
         # If no file is uploaded, use default dataset
         df = load_default_data()
-        st.info("Please upload a CSV file or use the default dataset")
-
+        
 # Dataset statistics
 with st.expander("Dataset Statistics"):
     if df.empty:
