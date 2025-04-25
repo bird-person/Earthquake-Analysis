@@ -87,27 +87,46 @@ def load_default_data():
         # Path directly in src folder (for deployed environments)
         os.path.join("src", "earthquake_cleandata_posteda.csv"),
         # Path directly in current directory (fallback)
-        "earthquake_cleandata_posteda.csv"
+        "earthquake_cleandata_posteda.csv",
+        # Additional paths for Streamlit Cloud deployment
+        "/mount/src/earthquake-analysis/src/earthquake_cleandata_posteda.csv",
+        "/app/src/earthquake_cleandata_posteda.csv",
+        # Try one directory up
+        os.path.join("..", "src", "earthquake_cleandata_posteda.csv")
     ]
     
     # Try each path
     for file_path in possible_paths:
         if os.path.exists(file_path):
             st.info(f"Data file found at: {file_path}")
-            df = pd.read_csv(file_path)
-            return df
+            try:
+                df = pd.read_csv(file_path)
+                return df
+            except Exception as e:
+                st.error(f"Error reading file at {file_path}: {str(e)}")
+                continue
     
     # If no file is found, display error
     paths_tried = "\n- ".join(possible_paths)
     st.error(f"Data file not found! Tried the following locations:\n- {paths_tried}")
     st.error("Please ensure the earthquake_cleandata_posteda.csv file is in the correct location.")
     
-    # Return empty DataFrame to avoid breaking the app
-    return pd.DataFrame()
+    # Create a fallback minimal dataframe to prevent application crashes
+    fallback_df = pd.DataFrame({
+        'LATITUDE': [34.05, 37.77, 40.71],
+        'LONGITUDE': [-118.25, -122.42, -74.01],
+        'MAGNITUDE': [3.5, 4.2, 2.8],
+        'DATE': pd.to_datetime(['2023-01-01', '2023-01-02', '2023-01-03']),
+        'DEPTH': [5.0, 7.5, 3.2],
+        'PLACE': ['Los Angeles, CA', 'San Francisco, CA', 'New York, NY']
+    })
+    st.warning("Using fallback dataset with sample data. Please upload your own CSV file.")
+    return fallback_df
 
-if dataset_option == "Use default dataset":
+if dataset_option == "Use default North America dataset":
     df = load_default_data()
-    st.success("Using default USGS earthquake dataset")
+    if not df.empty:
+        st.success("Using default USGS earthquake dataset")
 else:
     uploaded_file = st.file_uploader("Upload CSV file containing earthquake data", type=['csv'])
     
@@ -149,12 +168,31 @@ else:
 
 # Dataset statistics
 with st.expander("Dataset Statistics"):
-    st.write(f"Total records: {len(df)}")
-    st.write(f"Date range: {pd.to_datetime(df['DATE']).min().date()} to {pd.to_datetime(df['DATE']).max().date()}")
-    st.write(f"Magnitude range: {df['MAGNITUDE'].min():.1f} to {df['MAGNITUDE'].max():.1f}")
-    
-    # Display sample of the data
-    st.dataframe(df.head())
+    if df.empty:
+        st.warning("No data available to show statistics.")
+    else:
+        st.write(f"Total records: {len(df)}")
+        
+        # Only try to display date range if DATE column exists and has data
+        if 'DATE' in df.columns and not df['DATE'].empty:
+            try:
+                min_date = pd.to_datetime(df['DATE']).min().date()
+                max_date = pd.to_datetime(df['DATE']).max().date()
+                st.write(f"Date range: {min_date} to {max_date}")
+            except Exception as e:
+                st.error(f"Error processing date range: {str(e)}")
+        
+        # Only try to display magnitude range if MAGNITUDE column exists and has data
+        if 'MAGNITUDE' in df.columns and not df['MAGNITUDE'].empty:
+            try:
+                min_mag = df['MAGNITUDE'].min()
+                max_mag = df['MAGNITUDE'].max()
+                st.write(f"Magnitude range: {min_mag:.1f} to {max_mag:.1f}")
+            except Exception as e:
+                st.error(f"Error processing magnitude range: {str(e)}")
+        
+        # Display sample of the data
+        st.dataframe(df.head())
 
 # Create tabs
 tab1, tab2, tab3, tab4 = st.tabs(["Heatmap", "Zipcode Risk Checker", "Magnitude Predictor", "Insights"])

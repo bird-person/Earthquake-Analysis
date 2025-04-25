@@ -1,42 +1,53 @@
 # Earthquake Risk Analysis
 
-An interactive web application for visualizing earthquake data across North America and predicting potential earthquake magnitudes using machine learning.
+An interactive web application for analyzing earthquake data and predicting earthquake risk in North America.
 
 ## Features
 
-- **Interactive Heatmap**: Visualize earthquake intensity across North America with customizable filters for magnitude and date range
-- **Zipcode Risk Checker**: Check earthquake risk for specific zip codes, with detailed statistics and visualizations
-- **Magnitude Predictor**: Use machine learning (Random Forest or Gradient Boosting) to predict potential earthquake magnitudes for specific locations
-- **Data Insights**: Explore trends, patterns, and correlations in earthquake data
-- **Custom Dataset Support**: Upload your own earthquake dataset in CSV format
+- Interactive heatmap of earthquake activity
+- Zipcode-based risk assessment
+- Machine learning model for magnitude prediction
+- Insights and statistical analysis
 
-## Installation
+## Deployment Instructions
 
-```bash
-# Clone the repository
-git clone https://github.com/yourusername/earthquake-risk-analysis.git
-cd earthquake-risk-analysis
+### Local Deployment
 
-# Install dependencies
-pip install -r requirements.txt
-```
+1. Ensure Python 3.8+ is installed
+2. Clone this repository
+3. Run setup.bat (Windows) or setup.sh (Linux/Mac) to ensure data files are in the correct location
+4. Install dependencies:
+   ```
+   pip install -r requirements.txt
+   ```
+5. Run the application:
+   ```
+   streamlit run app.py
+   ```
 
-## Usage
+### Streamlit Cloud Deployment
 
-```bash
-# Run the Streamlit app
-streamlit run app.py
-```
+1. Push this repository to GitHub
+2. Connect to Streamlit Cloud (https://streamlit.io/cloud)
+3. Deploy your app by pointing to the GitHub repository
+4. Ensure the data file (`earthquake_cleandata_posteda.csv`) is in the `src` directory
+5. The app should automatically use the setup scripts during deployment
 
-Then open your browser and navigate to http://localhost:8501
+## Troubleshooting
 
-## Data Requirements
+If you encounter "Data file not found" errors:
+1. Make sure `earthquake_cleandata_posteda.csv` is in the `src` directory
+2. If using Streamlit Cloud, check that the file is properly pushed to your GitHub repository
+3. You can always upload your own CSV file through the application interface
 
-If you want to upload your own dataset, it must include these columns:
-- `LATITUDE`: Earthquake latitude
-- `LONGITUDE`: Earthquake longitude  
-- `MAGNITUDE`: Earthquake magnitude
-- `DATE`: Date of the earthquake
+## Data Format
+
+The application expects a CSV file with the following columns:
+- LATITUDE: decimal degrees
+- LONGITUDE: decimal degrees
+- MAGNITUDE: earthquake magnitude
+- DATE: date/time of the earthquake
+- Other columns like DEPTH, PLACE, etc. are optional but enhance functionality
 
 ## Technologies Used
 
