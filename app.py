@@ -78,21 +78,32 @@ def validate_dataset(df):
 # Load data based on user choice
 @st.cache_data
 def load_default_data():
-    # Get the absolute path to the file relative to the script location
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    file_path = os.path.join(script_dir, "src", "earthquake_cleandata_posteda.csv")
+    # Try multiple possible paths for the data file
+    possible_paths = [
+        # Path relative to script
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), "src", "earthquake_cleandata_posteda.csv"),
+        # Path relative to current working directory
+        os.path.join(os.getcwd(), "src", "earthquake_cleandata_posteda.csv"),
+        # Path directly in src folder (for deployed environments)
+        os.path.join("src", "earthquake_cleandata_posteda.csv"),
+        # Path directly in current directory (fallback)
+        "earthquake_cleandata_posteda.csv"
+    ]
     
-    # Check if file exists at the expected path
-    if not os.path.exists(file_path):
-        # Try alternative path (for deployed environments)
-        alt_path = os.path.join(os.getcwd(), "src", "earthquake_cleandata_posteda.csv")
-        if os.path.exists(alt_path):
-            file_path = alt_path
-        else:
-            st.error(f"Data file not found at {file_path} or {alt_path}")
+    # Try each path
+    for file_path in possible_paths:
+        if os.path.exists(file_path):
+            st.info(f"Data file found at: {file_path}")
+            df = pd.read_csv(file_path)
+            return df
     
-    df = pd.read_csv(file_path)
-    return df
+    # If no file is found, display error
+    paths_tried = "\n- ".join(possible_paths)
+    st.error(f"Data file not found! Tried the following locations:\n- {paths_tried}")
+    st.error("Please ensure the earthquake_cleandata_posteda.csv file is in the correct location.")
+    
+    # Return empty DataFrame to avoid breaking the app
+    return pd.DataFrame()
 
 if dataset_option == "Use default dataset":
     df = load_default_data()
