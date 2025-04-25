@@ -87,38 +87,28 @@ def validate_dataset(df):
 # Load data based on user choice
 @st.cache_data
 def load_default_data():
-    # Use a simpler approach to find the dataset
-    dataset_path = "src/earthquake_cleandata_posteda.csv"
+    # CSV file is in the root directory, not in src
+    dataset_path = "earthquake_cleandata_posteda.csv"
     
-    if os.path.exists(dataset_path):
-        try:
+    try:
+        if os.path.exists(dataset_path):
             df = pd.read_csv(dataset_path)
-            return df
-        except Exception as e:
-            # Silent error handling
-            pass
-    
-    # Try a few alternative paths if the main path doesn't work
-    alternative_paths = [
-        os.path.join(os.path.dirname(os.path.abspath(__file__)), "src", "earthquake_cleandata_posteda.csv"),
-        "/mount/src/karthikmanjunath_hariharannadanasabapathi_naveenmanikandan_phase_2/src/earthquake_cleandata_posteda.csv",
-        "/mount/src/earthquake-analysis/src/earthquake_cleandata_posteda.csv"
-    ]
-    
-    for path in alternative_paths:
-        if os.path.exists(path):
-            try:
-                df = pd.read_csv(path)
+            if not df.empty:
+                st.success(f"Successfully loaded dataset with {len(df)} records")
                 return df
-            except:
-                continue
+            else:
+                st.error(f"The dataset at {dataset_path} is empty")
+        else:
+            st.error(f"Dataset file not found at {dataset_path}")
+            st.info("Please ensure the CSV file is in the project directory")
+    except Exception as e:
+        st.error(f"Error loading dataset: {str(e)}")
     
-    # If we still can't find it, return an empty DataFrame
-    return pd.DataFrame()
+    # Return an empty DataFrame with the required columns if we can't load the file
+    return pd.DataFrame(columns=required_columns)
 
 if dataset_option == "Use default North America dataset":
     df = load_default_data()
-    # Remove the success message to clean up the UI
 else:
     uploaded_file = st.file_uploader("Upload CSV file containing earthquake data", type=['csv'])
     
