@@ -20,6 +20,15 @@ from scipy.stats import randint, uniform
 import io
 import base64
 
+# Import the data loader
+try:
+    from data_loader import ensure_data_file_exists
+    # Try to ensure the data file exists before proceeding
+    ensure_data_file_exists()
+except Exception as e:
+    st.warning(f"Data loader initialization error: {str(e)}")
+    # Continue with the app - we'll handle missing data gracefully later
+
 # Set page configuration
 st.set_page_config(
     page_title="Earthquake Risk Analysis",
@@ -78,6 +87,17 @@ def validate_dataset(df):
 # Load data based on user choice
 @st.cache_data
 def load_default_data():
+    # First check if we have a path configured in secrets
+    try:
+        dataset_path = st.secrets["data"]["dataset_path"]
+        if os.path.exists(dataset_path):
+            st.info(f"Using dataset path from configuration: {dataset_path}")
+            df = pd.read_csv(dataset_path)
+            return df
+    except Exception as e:
+        # If we can't access secrets or the path doesn't exist, proceed to try other options
+        st.info(f"Could not use configured dataset path, trying alternative paths...")
+    
     # Try multiple possible paths for the data file
     possible_paths = [
         # Path relative to script
@@ -92,8 +112,16 @@ def load_default_data():
         "/mount/src/earthquake-analysis/src/earthquake_cleandata_posteda.csv",
         "/app/src/earthquake_cleandata_posteda.csv",
         # Try one directory up
-        os.path.join("..", "src", "earthquake_cleandata_posteda.csv")
+        os.path.join("..", "src", "earthquake_cleandata_posteda.csv"),
+        # Common Streamlit Cloud paths
+        "/mount/src/karthikmanjunath_hariharannadanasabapathi_naveenmanikandan_phase_2/src/earthquake_cleandata_posteda.csv",
+        os.path.join(os.getcwd(), "..", "src", "earthquake_cleandata_posteda.csv")
     ]
+    
+    # Add path from environment variable if it exists
+    env_path = os.environ.get('EARTHQUAKE_DATA_PATH')
+    if env_path:
+        possible_paths.insert(0, env_path)
     
     # Try each path
     for file_path in possible_paths:
@@ -106,22 +134,40 @@ def load_default_data():
                 st.error(f"Error reading file at {file_path}: {str(e)}")
                 continue
     
-    # If no file is found, display error
-    paths_tried = "\n- ".join(possible_paths)
-    st.error(f"Data file not found! Tried the following locations:\n- {paths_tried}")
-    st.error("Please ensure the earthquake_cleandata_posteda.csv file is in the correct location.")
+    # If no file is found, try to use the upload widget
+    st.error("Could not find the dataset file in any of the expected locations.")
     
-    # Create a fallback minimal dataframe to prevent application crashes
-    fallback_df = pd.DataFrame({
-        'LATITUDE': [34.05, 37.77, 40.71],
-        'LONGITUDE': [-118.25, -122.42, -74.01],
-        'MAGNITUDE': [3.5, 4.2, 2.8],
-        'DATE': pd.to_datetime(['2023-01-01', '2023-01-02', '2023-01-03']),
-        'DEPTH': [5.0, 7.5, 3.2],
-        'PLACE': ['Los Angeles, CA', 'San Francisco, CA', 'New York, NY']
-    })
-    st.warning("Using fallback dataset with sample data. Please upload your own CSV file.")
-    return fallback_df
+    # Try to use a minimal embedded dataset as a last resort
+    st.info("Using an embedded sample dataset instead. For full functionality, please upload your own data.")
+    
+    # Check if we're allowed to use fallback data from secrets
+    try:
+        allow_fallback = st.secrets["general"]["allow_fallback_data"]
+        if not allow_fallback:
+            st.error("Fallback data is disabled in configuration. Please provide the dataset file.")
+            return pd.DataFrame()  # Return empty dataframe
+    except:
+        # If we can't access secrets, assume fallback is allowed
+        pass
+        
+    # Create a minimal dataset with realistic earthquake data
+    sample_data = {
+        'LATITUDE': [34.05, 37.77, 40.71, 32.72, 36.12, 38.58, 39.73, 42.36, 33.93, 35.65],
+        'LONGITUDE': [-118.25, -122.42, -74.01, -117.16, -115.17, -121.49, -104.99, -71.06, -118.39, -120.70],
+        'MAGNITUDE': [3.5, 4.2, 2.8, 3.9, 5.1, 2.5, 3.3, 2.9, 4.7, 3.6],
+        'DATE': pd.to_datetime([
+            '2023-01-01', '2023-01-15', '2023-02-01', '2023-02-15', '2023-03-01',
+            '2023-03-15', '2023-04-01', '2023-04-15', '2023-05-01', '2023-05-15'
+        ]),
+        'DEPTH': [5.0, 7.5, 3.2, 10.1, 8.7, 4.5, 6.8, 5.2, 9.3, 7.1],
+        'PLACE': [
+            'Los Angeles, CA', 'San Francisco, CA', 'New York, NY', 'San Diego, CA', 
+            'Las Vegas, NV', 'Sacramento, CA', 'Denver, CO', 'Boston, MA',
+            'Santa Monica, CA', 'Fresno, CA'
+        ]
+    }
+    
+    return pd.DataFrame(sample_data)
 
 if dataset_option == "Use default North America dataset":
     df = load_default_data()
