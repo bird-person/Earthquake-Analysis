@@ -78,7 +78,20 @@ def validate_dataset(df):
 # Load data based on user choice
 @st.cache_data
 def load_default_data():
-    df = pd.read_csv("src/earthquake_cleandata_posteda.csv")
+    # Get the absolute path to the file relative to the script location
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    file_path = os.path.join(script_dir, "src", "earthquake_cleandata_posteda.csv")
+    
+    # Check if file exists at the expected path
+    if not os.path.exists(file_path):
+        # Try alternative path (for deployed environments)
+        alt_path = os.path.join(os.getcwd(), "src", "earthquake_cleandata_posteda.csv")
+        if os.path.exists(alt_path):
+            file_path = alt_path
+        else:
+            st.error(f"Data file not found at {file_path} or {alt_path}")
+    
+    df = pd.read_csv(file_path)
     return df
 
 if dataset_option == "Use default dataset":
